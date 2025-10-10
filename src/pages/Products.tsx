@@ -40,13 +40,13 @@ const Products = () => {
         </div>
 
         {/* Filters */}
-        <div className="mb-8 gradient-card p-6 rounded-xl shadow-soft">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="mb-8 gradient-card p-4 md:p-6 rounded-xl shadow-soft">
+          <div className="flex items-center gap-2 mb-4 md:mb-6">
             <Filter className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold text-foreground">فلترة المنتجات</h2>
+            <h2 className="text-lg md:text-xl font-bold text-foreground">فلترة المنتجات</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-4 md:gap-6">
             {/* Search */}
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">
@@ -69,7 +69,7 @@ const Products = () => {
               <label className="block text-sm font-semibold text-foreground mb-2">
                 الفئة
               </label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 md:flex gap-2">
                 <Button
                   variant={categoryFilter === "all" ? "default" : "outline"}
                   onClick={() => setCategoryFilter("all")}
