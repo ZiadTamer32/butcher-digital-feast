@@ -100,53 +100,56 @@ const ConfirmOrder = () => {
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Order Summary */}
-          <div className="gradient-card p-6 rounded-xl shadow-soft h-fit">
-            <h2 className="text-2xl font-bold text-foreground mb-6">
+          <div className="gradient-card p-4 md:p-6 rounded-xl shadow-soft h-fit">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4 md:mb-6">
               ملخص الطلب
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {cart.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-4 p-4 bg-secondary/30 rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 md:p-4 bg-secondary/30 rounded-lg"
                 >
                   <img
                     src={item.image}
                     alt={item.nameAr}
-                    className="w-20 h-20 object-cover rounded-lg"
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg"
                   />
-                  <div className="flex-1">
-                    <h3 className="font-bold text-foreground">{item.nameAr}</h3>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-foreground text-sm md:text-base">{item.nameAr}</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       {item.price} ج.م × {item.quantity} كجم
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateQuantity(item.id, parseInt(e.target.value) || 1)
-                      }
-                      className="w-20 text-center"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => removeFromCart(item.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="font-bold text-primary">
-                    {item.price * item.quantity} ج.م
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) =>
+                          updateQuantity(item.id, parseInt(e.target.value) || 1)
+                        }
+                        className="w-16 sm:w-20 text-center text-sm"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => removeFromCart(item.id)}
+                        className="h-9 w-9"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="font-bold text-primary text-sm md:text-base whitespace-nowrap">
+                      {item.price * item.quantity} ج.م
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-6 pt-6 border-t border-border">
-              <div className="flex justify-between items-center text-2xl font-bold">
+            <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-border">
+              <div className="flex justify-between items-center text-lg md:text-2xl font-bold">
                 <span className="text-foreground">المجموع:</span>
                 <span className="text-primary">{getTotalPrice()} ج.م</span>
               </div>
@@ -154,8 +157,8 @@ const ConfirmOrder = () => {
           </div>
 
           {/* Customer Form */}
-          <div className="gradient-card p-6 rounded-xl shadow-soft">
-            <h2 className="text-2xl font-bold text-foreground mb-6">
+          <div className="gradient-card p-4 md:p-6 rounded-xl shadow-soft">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4 md:mb-6">
               بيانات العميل
             </h2>
             <form onSubmit={handleSubmit} className="space-y-5">
