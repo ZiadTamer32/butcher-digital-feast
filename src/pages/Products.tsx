@@ -1,15 +1,27 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ProductCard } from "@/components/ProductCard";
-import { products } from "@/data/products";
+import { products as initialProducts, Product } from "@/data/products";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Filter } from "lucide-react";
 
 const Products = () => {
+  const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+
+  useEffect(() => {
+    // Load products from localStorage or use initial products
+    const savedProducts = localStorage.getItem("products");
+    if (savedProducts) {
+      setProducts(JSON.parse(savedProducts));
+    } else {
+      setProducts(initialProducts);
+      localStorage.setItem("products", JSON.stringify(initialProducts));
+    }
+  }, []);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {

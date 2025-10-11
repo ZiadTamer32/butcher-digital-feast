@@ -3,9 +3,14 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, Pencil, Trash2, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Product, products as initialProducts } from "@/data/products";
 
 type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 
@@ -35,16 +40,112 @@ const Dashboard = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productForm, setProductForm] = useState<Partial<Product>>({
+    name: "",
+    nameAr: "",
+    description: "",
+    price: 0,
+    category: "beef",
+    image: "",
+  });
 
   useEffect(() => {
     if (isAuthenticated) {
       loadOrders();
+      loadProducts();
     }
   }, [isAuthenticated]);
+
+  // Initialize products in localStorage if not exists
+  useEffect(() => {
+    const savedProducts = localStorage.getItem("products");
+    if (!savedProducts) {
+      localStorage.setItem("products", JSON.stringify(initialProducts));
+    }
+  }, []);
 
   const loadOrders = () => {
     const savedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
     setOrders(savedOrders.reverse()); // Show newest first
+  };
+
+  const loadProducts = () => {
+    const savedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+    setProducts(savedProducts);
+  };
+
+  const handleProductSubmit = () => {
+    if (!productForm.name || !productForm.nameAr || !productForm.price) {
+      toast.error("الرجاء ملء جميع الحقول المطلوبة");
+      return;
+    }
+
+    const savedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+    
+    if (editingProduct) {
+      // Update existing product
+      const updatedProducts = savedProducts.map((p: Product) =>
+        p.id === editingProduct.id ? { ...editingProduct, ...productForm } : p
+      );
+      localStorage.setItem("products", JSON.stringify(updatedProducts));
+      toast.success("تم تحديث المنتج بنجاح");
+    } else {
+      // Add new product
+      const newProduct: Product = {
+        id: Date.now().toString(),
+        name: productForm.name!,
+        nameAr: productForm.nameAr!,
+        description: productForm.description || "",
+        price: productForm.price!,
+        category: productForm.category as "beef" | "lamb" | "chicken",
+        image: productForm.image || "",
+      };
+      savedProducts.push(newProduct);
+      localStorage.setItem("products", JSON.stringify(savedProducts));
+      toast.success("تم إضافة المنتج بنجاح");
+    }
+
+    loadProducts();
+    setIsProductDialogOpen(false);
+    resetProductForm();
+  };
+
+  const handleDeleteProduct = (productId: string) => {
+    if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+      const savedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+      const updatedProducts = savedProducts.filter((p: Product) => p.id !== productId);
+      localStorage.setItem("products", JSON.stringify(updatedProducts));
+      loadProducts();
+      toast.success("تم حذف المنتج");
+    }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setProductForm({
+      name: product.name,
+      nameAr: product.nameAr,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      image: product.image,
+    });
+    setIsProductDialogOpen(true);
+  };
+
+  const resetProductForm = () => {
+    setEditingProduct(null);
+    setProductForm({
+      name: "",
+      nameAr: "",
+      description: "",
+      price: 0,
+      category: "beef",
+      image: "",
+    });
   };
 
   const updateOrderStatus = (orderId: string, newStatus: OrderStatus) => {
@@ -181,13 +282,21 @@ const Dashboard = () => {
               لوحة التحكم
             </h1>
             <p className="text-muted-foreground">
-              إدارة ومتابعة جميع الطلبات
+              إدارة ومتابعة جميع الطلبات والمنتجات
             </p>
           </div>
           <Button onClick={handleLogout} variant="destructive">
             تسجيل الخروج
           </Button>
         </div>
+
+        <Tabs defaultValue="orders" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+            <TabsTrigger value="orders">الطلبات</TabsTrigger>
+            <TabsTrigger value="products">المنتجات</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders">
 
         {orders.length === 0 ? (
           <div className="gradient-card p-12 rounded-xl shadow-soft text-center">
@@ -298,6 +407,181 @@ const Dashboard = () => {
             ))}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="products">
+            <div className="mb-6 flex justify-end">
+              <Dialog open={isProductDialogOpen} onOpenChange={(open) => {
+                setIsProductDialogOpen(open);
+                if (!open) resetProductForm();
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="hero" size="lg">
+                    <Plus className="ml-2 h-5 w-5" />
+                    إضافة منتج جديد
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingProduct ? "تعديل المنتج" : "إضافة منتج جديد"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingProduct ? "قم بتعديل بيانات المنتج" : "أضف منتج جديد إلى المتجر"}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">اسم المنتج (EN)</Label>
+                        <Input
+                          id="name"
+                          value={productForm.name}
+                          onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                          placeholder="Product Name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="nameAr">اسم المنتج (AR)</Label>
+                        <Input
+                          id="nameAr"
+                          value={productForm.nameAr}
+                          onChange={(e) => setProductForm({ ...productForm, nameAr: e.target.value })}
+                          placeholder="اسم المنتج"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">الوصف</Label>
+                      <Textarea
+                        id="description"
+                        value={productForm.description}
+                        onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                        placeholder="وصف المنتج"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="price">السعر (ج.م/كجم)</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          value={productForm.price}
+                          onChange={(e) => setProductForm({ ...productForm, price: parseFloat(e.target.value) })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="category">الفئة</Label>
+                        <Select
+                          value={productForm.category}
+                          onValueChange={(value) => setProductForm({ ...productForm, category: value as "beef" | "lamb" | "chicken" })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="beef">لحم بقري</SelectItem>
+                            <SelectItem value="lamb">لحم غنم</SelectItem>
+                            <SelectItem value="chicken">دجاج</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="image">رابط الصورة</Label>
+                      <Input
+                        id="image"
+                        value={productForm.image}
+                        onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
+                        placeholder="https://example.com/image.jpg"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsProductDialogOpen(false);
+                        resetProductForm();
+                      }}
+                    >
+                      إلغاء
+                    </Button>
+                    <Button variant="hero" onClick={handleProductSubmit}>
+                      {editingProduct ? "حفظ التعديلات" : "إضافة المنتج"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {products.length === 0 ? (
+              <div className="gradient-card p-12 rounded-xl shadow-soft text-center">
+                <p className="text-xl text-muted-foreground">
+                  لا توجد منتجات حالياً
+                </p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <div
+                    key={product.id}
+                    className="gradient-card p-6 rounded-xl shadow-soft"
+                  >
+                    {product.image && (
+                      <img
+                        src={product.image}
+                        alt={product.nameAr}
+                        className="w-full h-48 object-cover rounded-lg mb-4"
+                      />
+                    )}
+                    <h3 className="text-xl font-bold text-foreground mb-2">
+                      {product.nameAr}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {product.name}
+                    </p>
+                    <p className="text-muted-foreground mb-3 line-clamp-2">
+                      {product.description}
+                    </p>
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant="outline">
+                        {product.category === "beef" && "لحم بقري"}
+                        {product.category === "lamb" && "لحم غنم"}
+                        {product.category === "chicken" && "دجاج"}
+                      </Badge>
+                      <span className="text-2xl font-bold text-primary">
+                        {product.price} ج.م
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleEditProduct(product)}
+                      >
+                        <Pencil className="ml-2 h-4 w-4" />
+                        تعديل
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleDeleteProduct(product.id)}
+                      >
+                        <Trash2 className="ml-2 h-4 w-4" />
+                        حذف
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
