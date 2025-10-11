@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { CheckCircle, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const ThankYou = () => {
   const navigate = useNavigate();
-  const [countdown, setCountdown] = useState(3);
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get("orderId");
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -37,29 +39,47 @@ const ThankYou = () => {
           تم استلام طلبك بنجاح وسنتواصل معك قريباً
         </p>
 
-        <div className="bg-secondary/50 rounded-lg p-6 mb-8">
-          <p className="text-lg text-foreground">
+        {orderId && (
+          <div className="bg-secondary/50 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Package className="w-5 h-5 text-primary" />
+              <p className="font-semibold text-foreground">رقم الطلب</p>
+            </div>
+            <p className="text-3xl font-bold text-primary mb-4">#{orderId}</p>
+            <Button
+              onClick={() => navigate(`/order/${orderId}`)}
+              variant="outline"
+              size="lg"
+              className="w-full"
+            >
+              تتبع طلبك
+            </Button>
+          </div>
+        )}
+
+        <div className="bg-secondary/30 rounded-lg p-4 mb-8">
+          <p className="text-sm text-muted-foreground">
             سيتم تحويلك إلى صفحة المنتجات خلال{" "}
-            <span className="text-3xl font-bold text-primary">{countdown}</span>{" "}
+            <span className="text-2xl font-bold text-primary">{countdown}</span>{" "}
             ثواني
           </p>
         </div>
 
-        <Button
-          onClick={() => navigate("/products")}
-          variant="hero"
-          size="lg"
-          className="mb-4"
-        >
-          العودة إلى المنتجات الآن
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button
+            onClick={() => navigate("/products")}
+            variant="hero"
+            size="lg"
+          >
+            تصفح المنتجات
+          </Button>
 
-        <div className="mt-6">
           <Button
             onClick={() => navigate("/")}
             variant="outline"
+            size="lg"
           >
-            العودة إلى الصفحة الرئيسية
+            الصفحة الرئيسية
           </Button>
         </div>
       </div>

@@ -10,6 +10,7 @@ import Products from "./pages/Products";
 import ConfirmOrder from "./pages/ConfirmOrder";
 import ThankYou from "./pages/ThankYou";
 import Dashboard from "./pages/Dashboard";
+import OrderTracking from "./pages/OrderTracking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/products" element={<Products />} />
             <Route path="/confirm" element={<ConfirmOrder />} />
             <Route path="/thank-you" element={<ThankYou />} />
+            <Route path="/order/:orderId" element={<OrderTracking />} />
             <Route path="/dashboard" element={<Dashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

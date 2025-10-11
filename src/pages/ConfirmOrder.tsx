@@ -68,7 +68,7 @@ const ConfirmOrder = () => {
 
     clearCart();
     toast.success("تم تأكيد الطلب بنجاح!");
-    navigate("/thank-you");
+    navigate(`/thank-you?orderId=${order.id}`);
   };
 
   if (cart.length === 0) {
