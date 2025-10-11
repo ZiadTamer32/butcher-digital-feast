@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
+type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 
 interface Order {
   id: string;
@@ -22,6 +26,7 @@ interface Order {
   }>;
   total: number;
   date: string;
+  status: OrderStatus;
 }
 
 const Dashboard = () => {
@@ -40,6 +45,29 @@ const Dashboard = () => {
   const loadOrders = () => {
     const savedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
     setOrders(savedOrders.reverse()); // Show newest first
+  };
+
+  const updateOrderStatus = (orderId: string, newStatus: OrderStatus) => {
+    const savedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const updatedOrders = savedOrders.map((order: Order) =>
+      order.id === orderId ? { ...order, status: newStatus } : order
+    );
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+    setOrders(updatedOrders.reverse());
+    toast.success("تم تحديث حالة الطلب");
+  };
+
+  const getStatusBadge = (status: OrderStatus) => {
+    const statusConfig: Record<OrderStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+      pending: { label: "قيد الانتظار", variant: "secondary" },
+      confirmed: { label: "مؤكد", variant: "default" },
+      preparing: { label: "قيد التحضير", variant: "default" },
+      ready: { label: "جاهز", variant: "default" },
+      completed: { label: "مكتمل", variant: "outline" },
+      cancelled: { label: "ملغي", variant: "destructive" },
+    };
+    const config = statusConfig[status];
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -228,14 +256,42 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-6 border-t border-border">
-                  <div className="text-muted-foreground">
-                    <span className="font-semibold">تاريخ الطلب:</span>{" "}
-                    {new Date(order.date).toLocaleString("ar-EG")}
+                <div className="pt-6 border-t border-border space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="text-muted-foreground">
+                      <span className="font-semibold">تاريخ الطلب:</span>{" "}
+                      {new Date(order.date).toLocaleString("ar-EG")}
+                    </div>
+                    <div className="text-xl sm:text-2xl font-bold">
+                      <span className="text-foreground">المجموع:</span>{" "}
+                      <span className="text-primary">{order.total} ج.م</span>
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold">
-                    <span className="text-foreground">المجموع:</span>{" "}
-                    <span className="text-primary">{order.total} ج.م</span>
+                  
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 bg-secondary/20 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground">حالة الطلب:</span>
+                      {getStatusBadge(order.status)}
+                    </div>
+                    <div className="flex items-center gap-2 flex-1 sm:justify-end">
+                      <span className="text-sm text-muted-foreground">تحديث الحالة:</span>
+                      <Select
+                        value={order.status}
+                        onValueChange={(value) => updateOrderStatus(order.id, value as OrderStatus)}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">قيد الانتظار</SelectItem>
+                          <SelectItem value="confirmed">مؤكد</SelectItem>
+                          <SelectItem value="preparing">قيد التحضير</SelectItem>
+                          <SelectItem value="ready">جاهز</SelectItem>
+                          <SelectItem value="completed">مكتمل</SelectItem>
+                          <SelectItem value="cancelled">ملغي</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </div>

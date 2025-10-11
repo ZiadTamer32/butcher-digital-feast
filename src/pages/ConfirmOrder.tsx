@@ -58,6 +58,7 @@ const ConfirmOrder = () => {
       items: cart,
       total: getTotalPrice(),
       date: new Date().toISOString(),
+      status: 'pending' as const,
     };
 
     const existingOrders = JSON.parse(
