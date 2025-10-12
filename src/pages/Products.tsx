@@ -14,13 +14,28 @@ const Products = () => {
 
   useEffect(() => {
     // Load products from localStorage or use initial products
-    const savedProducts = localStorage.getItem("products");
-    if (savedProducts) {
-      setProducts(JSON.parse(savedProducts));
-    } else {
-      setProducts(initialProducts);
-      localStorage.setItem("products", JSON.stringify(initialProducts));
-    }
+    const loadProductsFromStorage = () => {
+      const savedProducts = localStorage.getItem("products");
+      if (savedProducts) {
+        const parsedProducts = JSON.parse(savedProducts);
+        setProducts(parsedProducts.length > 0 ? parsedProducts : initialProducts);
+      } else {
+        setProducts(initialProducts);
+        localStorage.setItem("products", JSON.stringify(initialProducts));
+      }
+    };
+
+    loadProductsFromStorage();
+
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "products") {
+        loadProductsFromStorage();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const filteredProducts = useMemo(() => {

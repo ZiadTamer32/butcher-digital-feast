@@ -167,7 +167,7 @@ const Dashboard = () => {
       completed: { label: "مكتمل", variant: "outline" },
       cancelled: { label: "ملغي", variant: "destructive" },
     };
-    const config = statusConfig[status];
+    const config = statusConfig[status] || statusConfig.pending;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
