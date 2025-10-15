@@ -40,29 +40,27 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [latestOrder, setLatestOrder] = useState<Order | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    const loadLatestOrder = () => {
-      const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-      if (orders.length > 0) {
-        setLatestOrder(orders[orders.length - 1]);
-      }
+    const loadOrders = () => {
+      const savedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      setOrders(savedOrders);
     };
 
-    loadLatestOrder();
+    loadOrders();
     
     // Listen for storage changes to update when new orders are placed
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "orders") {
-        loadLatestOrder();
+        loadOrders();
       }
     };
 
     window.addEventListener("storage", handleStorageChange);
     
     // Also listen for custom event when order is placed in same tab
-    const handleOrderPlaced = () => loadLatestOrder();
+    const handleOrderPlaced = () => loadOrders();
     window.addEventListener("orderPlaced", handleOrderPlaced);
     
     return () => {
@@ -149,15 +147,14 @@ export const Navbar = () => {
             <Link to="/dashboard" className="text-foreground hover:text-primary transition-smooth font-semibold">
               لوحة التحكم
             </Link>
-            {latestOrder && (
+            {orders.length > 0 && (
               <Button 
                 variant="outline" 
-                size="icon"
                 onClick={() => setDrawerOpen(true)}
-                className="relative"
+                className="relative gap-2"
               >
                 <Package className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"></span>
+                <span>طلباتي ({orders.length})</span>
               </Button>
             )}
             <Link to="/confirm">
@@ -174,7 +171,7 @@ export const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-3">
-            {latestOrder && (
+            {orders.length > 0 && (
               <Button 
                 variant="outline" 
                 size="icon"
@@ -182,7 +179,11 @@ export const Navbar = () => {
                 className="relative"
               >
                 <Package className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"></span>
+                {orders.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                    {orders.length}
+                  </span>
+                )}
               </Button>
             )}
             <Link to="/confirm">
@@ -233,7 +234,7 @@ export const Navbar = () => {
         )}
       </div>
 
-      {/* Order Tracking Drawer */}
+      {/* Orders Drawer */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-center">
@@ -242,97 +243,88 @@ export const Navbar = () => {
                 <Package className="w-10 h-10 text-primary" />
               </div>
             </div>
-            <DrawerTitle className="text-2xl">تتبع طلبك</DrawerTitle>
+            <DrawerTitle className="text-2xl">طلباتي</DrawerTitle>
             <DrawerDescription className="text-base">
-              رقم الطلب: <span className="font-bold text-foreground">#{latestOrder?.id}</span>
+              لديك {orders.length} {orders.length === 1 ? 'طلب' : 'طلبات'}
             </DrawerDescription>
           </DrawerHeader>
 
           <div className="px-4 pb-4 overflow-y-auto">
-            {latestOrder && (
-              <div className="space-y-4">
-                {/* Status Badge */}
-                <div className="flex justify-center">
-                  <Badge variant={getStatusInfo(latestOrder.status).variant} className="text-lg px-4 py-2">
-                    {getStatusInfo(latestOrder.status).label}
-                  </Badge>
+            <div className="space-y-3">
+              {orders.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">لا توجد طلبات حتى الآن</p>
                 </div>
-
-                {/* Progress Bar */}
-                {latestOrder.status !== 'cancelled' && (
-                  <div className="px-4">
-                    <div className="h-2 bg-secondary/30 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-500"
-                        style={{ width: `${getProgressPercentage(latestOrder.status)}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Estimated Time */}
-                <div className="gradient-card p-4 rounded-lg mx-4">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-6 h-6 text-primary" />
-                    <div>
-                      <p className="font-semibold text-foreground">الوقت المقدر للتسليم</p>
-                      <p className="text-muted-foreground">{getStatusInfo(latestOrder.status).estimatedTime}</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-3">
-                    {getStatusInfo(latestOrder.status).description}
-                  </p>
-                </div>
-
-                {/* Order Items Summary */}
-                <div className="gradient-card p-4 rounded-lg mx-4">
-                  <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
-                    <Package className="w-5 h-5" />
-                    ملخص الطلب
-                  </h3>
-                  <div className="space-y-2">
-                    {latestOrder.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex justify-between items-center p-2 bg-secondary/30 rounded-lg"
-                      >
+              ) : (
+                [...orders].reverse().map((order) => {
+                  const statusInfo = getStatusInfo(order.status);
+                  return (
+                    <div
+                      key={order.id}
+                      onClick={() => {
+                        setDrawerOpen(false);
+                        navigate(`/order/${order.id}`);
+                      }}
+                      className="gradient-card p-4 rounded-lg cursor-pointer hover:shadow-lg transition-all"
+                    >
+                      <div className="flex justify-between items-start mb-3">
                         <div>
-                          <p className="font-semibold text-foreground text-sm">{item.nameAr}</p>
+                          <p className="font-bold text-foreground">
+                            طلب #{order.id}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {item.quantity} كجم × {item.price} ج.م
+                            {new Date(order.date).toLocaleDateString("ar-EG", {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </p>
                         </div>
-                        <p className="font-bold text-primary">
-                          {item.quantity * item.price} ج.م
-                        </p>
+                        <Badge variant={statusInfo.variant} className="text-xs">
+                          {statusInfo.label}
+                        </Badge>
                       </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
-                    <span className="font-bold text-foreground">المجموع الكلي:</span>
-                    <span className="text-xl font-bold text-primary">{latestOrder.total} ج.م</span>
-                  </div>
-                </div>
-              </div>
-            )}
+
+                      {/* Progress Bar */}
+                      {order.status !== 'cancelled' && (
+                        <div className="mb-3">
+                          <div className="h-1.5 bg-secondary/30 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-500"
+                              style={{ width: `${getProgressPercentage(order.status)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center text-sm">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Clock className="w-4 h-4" />
+                          <span>{statusInfo.estimatedTime}</span>
+                        </div>
+                        <span className="font-bold text-primary text-base">
+                          {order.total} ج.م
+                        </span>
+                      </div>
+
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {order.items.length} {order.items.length === 1 ? 'منتج' : 'منتجات'}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
 
-          <DrawerFooter className="flex-row gap-2 px-4 pb-6">
-            <Button 
-              onClick={() => {
-                setDrawerOpen(false);
-                navigate(`/order/${latestOrder?.id}`);
-              }}
-              variant="hero"
-              className="flex-1"
-            >
-              عرض التفاصيل الكاملة
-              <ArrowRight className="mr-2 h-4 w-4" />
-            </Button>
+          <DrawerFooter className="px-4 pb-6">
             <Button 
               onClick={() => setDrawerOpen(false)}
               variant="outline"
-              className="flex-1"
+              className="w-full"
             >
               إغلاق
             </Button>
