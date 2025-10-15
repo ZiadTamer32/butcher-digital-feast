@@ -5,8 +5,17 @@ import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, Package, Clock, CheckCircle, ArrowRight } from "lucide-react";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+} from "@/components/ui/drawer";
 
 interface OrderForm {
   fullName: string;
@@ -14,6 +23,23 @@ interface OrderForm {
   phone: string;
   address: string;
   notes: string;
+}
+
+type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+
+interface Order {
+  id: string;
+  customer: OrderForm;
+  items: Array<{
+    id: string;
+    nameAr: string;
+    price: number;
+    quantity: number;
+    image: string;
+  }>;
+  total: number;
+  date: string;
+  status: OrderStatus;
 }
 
 const ConfirmOrder = () => {
@@ -28,6 +54,9 @@ const ConfirmOrder = () => {
     address: "",
     notes: "",
   });
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -67,8 +96,18 @@ const ConfirmOrder = () => {
     localStorage.setItem("orders", JSON.stringify([...existingOrders, order]));
 
     clearCart();
+    setConfirmedOrder(order);
+    setDrawerOpen(true);
     toast.success("تم تأكيد الطلب بنجاح!");
-    navigate(`/thank-you?orderId=${order.id}`);
+  };
+
+  const getStatusInfo = () => {
+    return {
+      label: "قيد الانتظار",
+      variant: "secondary" as const,
+      estimatedTime: "15-30 دقيقة",
+      description: "جاري مراجعة الطلب وسيتم تأكيده قريباً"
+    };
   };
 
   if (cart.length === 0) {
@@ -239,6 +278,114 @@ const ConfirmOrder = () => {
           </div>
         </div>
       </div>
+
+      {/* Order Tracking Drawer */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-primary" />
+              </div>
+            </div>
+            <DrawerTitle className="text-2xl">تم تأكيد طلبك بنجاح!</DrawerTitle>
+            <DrawerDescription className="text-base">
+              رقم الطلب: <span className="font-bold text-foreground">#{confirmedOrder?.id}</span>
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="px-4 pb-4 overflow-y-auto">
+            {confirmedOrder && (
+              <div className="space-y-4">
+                {/* Status Badge */}
+                <div className="flex justify-center">
+                  <Badge variant={getStatusInfo().variant} className="text-lg px-4 py-2">
+                    {getStatusInfo().label}
+                  </Badge>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="px-4">
+                  <div className="h-2 bg-secondary/30 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-500"
+                      style={{ width: '20%' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Estimated Time */}
+                <div className="gradient-card p-4 rounded-lg mx-4">
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-6 h-6 text-primary" />
+                    <div>
+                      <p className="font-semibold text-foreground">الوقت المقدر للتسليم</p>
+                      <p className="text-muted-foreground">{getStatusInfo().estimatedTime}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    {getStatusInfo().description}
+                  </p>
+                </div>
+
+                {/* Order Items Summary */}
+                <div className="gradient-card p-4 rounded-lg mx-4">
+                  <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    ملخص الطلب
+                  </h3>
+                  <div className="space-y-2">
+                    {confirmedOrder.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex justify-between items-center p-2 bg-secondary/30 rounded-lg"
+                      >
+                        <div>
+                          <p className="font-semibold text-foreground text-sm">{item.nameAr}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.quantity} كجم × {item.price} ج.م
+                          </p>
+                        </div>
+                        <p className="font-bold text-primary">
+                          {item.quantity * item.price} ج.م
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
+                    <span className="font-bold text-foreground">المجموع الكلي:</span>
+                    <span className="text-xl font-bold text-primary">{confirmedOrder.total} ج.م</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DrawerFooter className="flex-row gap-2 px-4 pb-6">
+            <Button 
+              onClick={() => {
+                setDrawerOpen(false);
+                navigate(`/order/${confirmedOrder?.id}`);
+              }}
+              variant="hero"
+              className="flex-1"
+            >
+              تتبع الطلب بالتفصيل
+              <ArrowRight className="mr-2 h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={() => {
+                setDrawerOpen(false);
+                navigate("/products");
+              }}
+              variant="outline"
+              className="flex-1"
+            >
+              تصفح المنتجات
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
