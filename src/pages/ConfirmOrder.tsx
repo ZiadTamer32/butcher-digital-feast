@@ -99,6 +99,9 @@ const ConfirmOrder = () => {
     setConfirmedOrder(order);
     setDrawerOpen(true);
     toast.success("تم تأكيد الطلب بنجاح!");
+    
+    // Trigger custom event for navbar to update
+    window.dispatchEvent(new Event("orderPlaced"));
   };
 
   const getStatusInfo = () => {
