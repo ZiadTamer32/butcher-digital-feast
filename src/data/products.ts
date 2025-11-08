@@ -10,6 +10,7 @@ export interface Product {
   price: number;
   category: "beef" | "lamb" | "chicken";
   image: string;
+  available?: boolean;
 }
 
 export const products: Product[] = [
@@ -21,6 +22,7 @@ export const products: Product[] = [
     price: 180,
     category: "beef",
     image: beefImage,
+    available: true,
   },
   {
     id: "2",
@@ -30,6 +32,7 @@ export const products: Product[] = [
     price: 120,
     category: "beef",
     image: beefImage,
+    available: true,
   },
   {
     id: "3",
@@ -39,6 +42,7 @@ export const products: Product[] = [
     price: 200,
     category: "beef",
     image: beefImage,
+    available: true,
   },
   {
     id: "4",
@@ -48,6 +52,7 @@ export const products: Product[] = [
     price: 250,
     category: "lamb",
     image: lambImage,
+    available: true,
   },
   {
     id: "5",
@@ -57,6 +62,7 @@ export const products: Product[] = [
     price: 160,
     category: "lamb",
     image: lambImage,
+    available: true,
   },
   {
     id: "6",
@@ -66,32 +72,6 @@ export const products: Product[] = [
     price: 220,
     category: "lamb",
     image: lambImage,
-  },
-  {
-    id: "7",
-    name: "Chicken Breast",
-    nameAr: "صدور دجاج",
-    description: "صدور دجاج طازجة",
-    price: 90,
-    category: "chicken",
-    image: chickenImage,
-  },
-  {
-    id: "8",
-    name: "Whole Chicken",
-    nameAr: "دجاج كامل",
-    description: "دجاج طازج كامل",
-    price: 70,
-    category: "chicken",
-    image: chickenImage,
-  },
-  {
-    id: "9",
-    name: "Chicken Wings",
-    nameAr: "أجنحة دجاج",
-    description: "أجنحة دجاج طازجة",
-    price: 60,
-    category: "chicken",
-    image: chickenImage,
+    available: true,
   },
 ];

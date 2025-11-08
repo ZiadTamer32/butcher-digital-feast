@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Trash2, Package, Clock, CheckCircle, ArrowRight } from "lucide-react";
+import { LocationPicker } from "@/components/LocationPicker";
 import {
   Drawer,
   DrawerContent,
@@ -23,6 +24,10 @@ interface OrderForm {
   phone: string;
   address: string;
   notes: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
@@ -258,6 +263,22 @@ const ConfirmOrder = () => {
                   placeholder="أدخل عنوانك بالتفصيل"
                   required
                   rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  تحديد الموقع على الخريطة (اختياري)
+                </label>
+                <LocationPicker
+                  onLocationSelect={(location) => {
+                    setFormData({
+                      ...formData,
+                      address: location.address,
+                      location: { lat: location.lat, lng: location.lng },
+                    });
+                  }}
+                  initialAddress={formData.address}
                 />
               </div>
 

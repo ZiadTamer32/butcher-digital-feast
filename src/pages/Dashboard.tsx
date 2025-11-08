@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Product, products as initialProducts } from "@/data/products";
 
 type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
@@ -50,6 +51,7 @@ const Dashboard = () => {
     price: 0,
     category: "beef",
     image: "",
+    available: true,
   });
 
   useEffect(() => {
@@ -132,6 +134,7 @@ const Dashboard = () => {
       price: product.price,
       category: product.category,
       image: product.image,
+      available: product.available !== false,
     });
     setIsProductDialogOpen(true);
   };
@@ -145,6 +148,7 @@ const Dashboard = () => {
       price: 0,
       category: "beef",
       image: "",
+      available: true,
     });
   };
 
@@ -498,6 +502,21 @@ const Dashboard = () => {
                         placeholder="https://example.com/image.jpg"
                       />
                     </div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id="available"
+                        checked={productForm.available !== false}
+                        onCheckedChange={(checked) => 
+                          setProductForm({ ...productForm, available: checked as boolean })
+                        }
+                      />
+                      <Label
+                        htmlFor="available"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        المنتج متوفر للبيع
+                      </Label>
+                    </div>
                   </div>
                   <div className="flex justify-end gap-3">
                     <Button
@@ -552,9 +571,19 @@ const Dashboard = () => {
                         {product.category === "lamb" && "لحم غنم"}
                         {product.category === "chicken" && "دجاج"}
                       </Badge>
-                      <span className="text-2xl font-bold text-primary">
-                        {product.price} ج.م
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-bold text-primary">
+                          {product.price} ج.م
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <Badge 
+                        variant={product.available !== false ? "outline" : "destructive"}
+                        className={product.available !== false ? "bg-accent/10 text-accent border-accent" : ""}
+                      >
+                        {product.available !== false ? "متوفر" : "غير متوفر"}
+                      </Badge>
                     </div>
                     <div className="flex gap-2">
                       <Button
