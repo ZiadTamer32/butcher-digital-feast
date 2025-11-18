@@ -45,6 +45,7 @@ interface Order {
   total: number;
   date: string;
   status: OrderStatus;
+  seen?: boolean;
 }
 
 const ConfirmOrder = () => {
@@ -93,6 +94,7 @@ const ConfirmOrder = () => {
       total: getTotalPrice(),
       date: new Date().toISOString(),
       status: 'pending' as const,
+      seen: false,
     };
 
     const existingOrders = JSON.parse(
