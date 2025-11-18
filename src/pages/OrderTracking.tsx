@@ -128,6 +128,22 @@ const OrderTracking = () => {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="gradient-card p-6 md:p-8 rounded-xl shadow-soft mb-6">
+            {order.status === 'cancelled' && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-destructive" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-destructive mb-1">تم إلغاء الطلب</h3>
+                    <p className="text-sm text-muted-foreground">
+                      نعتذر، تم إلغاء هذا الطلب. للمزيد من المعلومات يرجى التواصل معنا.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">

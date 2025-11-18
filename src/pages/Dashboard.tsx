@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Product, products as initialProducts } from "@/data/products";
 
 type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+type OrderFilter = 'all' | 'new' | 'seen' | 'cancelled';
 
 interface Order {
   id: string;
@@ -33,6 +34,7 @@ interface Order {
   total: number;
   date: string;
   status: OrderStatus;
+  seen?: boolean;
 }
 
 const Dashboard = () => {
@@ -41,6 +43,7 @@ const Dashboard = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [orderFilter, setOrderFilter] = useState<OrderFilter>('all');
   const [products, setProducts] = useState<Product[]>([]);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -175,6 +178,31 @@ const Dashboard = () => {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const markOrderAsSeen = (orderId: string) => {
+    const savedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const updatedOrders = savedOrders.map((order: Order) =>
+      order.id === orderId ? { ...order, seen: true } : order
+    );
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+    setOrders(updatedOrders.reverse());
+  };
+
+  const getFilteredOrders = () => {
+    switch (orderFilter) {
+      case 'new':
+        return orders.filter(order => !order.seen);
+      case 'seen':
+        return orders.filter(order => order.seen);
+      case 'cancelled':
+        return orders.filter(order => order.status === 'cancelled');
+      case 'all':
+      default:
+        return orders;
+    }
+  };
+
+  const filteredOrders = getFilteredOrders();
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -301,16 +329,43 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="orders">
+            {/* Filter Buttons */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              <Button
+                variant={orderFilter === 'all' ? 'default' : 'outline'}
+                onClick={() => setOrderFilter('all')}
+              >
+                الكل ({orders.length})
+              </Button>
+              <Button
+                variant={orderFilter === 'new' ? 'default' : 'outline'}
+                onClick={() => setOrderFilter('new')}
+              >
+                جديد ({orders.filter(o => !o.seen).length})
+              </Button>
+              <Button
+                variant={orderFilter === 'seen' ? 'default' : 'outline'}
+                onClick={() => setOrderFilter('seen')}
+              >
+                تمت المشاهدة ({orders.filter(o => o.seen).length})
+              </Button>
+              <Button
+                variant={orderFilter === 'cancelled' ? 'default' : 'outline'}
+                onClick={() => setOrderFilter('cancelled')}
+              >
+                ملغي ({orders.filter(o => o.status === 'cancelled').length})
+              </Button>
+            </div>
 
-        {orders.length === 0 ? (
+        {filteredOrders.length === 0 ? (
           <div className="gradient-card p-12 rounded-xl shadow-soft text-center">
             <p className="text-xl text-muted-foreground">
-              لا توجد طلبات حالياً
+              لا توجد طلبات في هذا الفلتر
             </p>
           </div>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <div
                 key={order.id}
                 className="gradient-card p-6 rounded-xl shadow-soft"
@@ -385,12 +440,18 @@ const Dashboard = () => {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground">حالة الطلب:</span>
                       {getStatusBadge(order.status)}
+                      {!order.seen && (
+                        <Badge variant="secondary" className="mr-2">جديد</Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-1 sm:justify-end">
                       <span className="text-sm text-muted-foreground">تحديث الحالة:</span>
                       <Select
                         value={order.status}
-                        onValueChange={(value) => updateOrderStatus(order.id, value as OrderStatus)}
+                        onValueChange={(value) => {
+                          updateOrderStatus(order.id, value as OrderStatus);
+                          if (!order.seen) markOrderAsSeen(order.id);
+                        }}
                       >
                         <SelectTrigger className="w-[180px]">
                           <SelectValue />
@@ -404,6 +465,15 @@ const Dashboard = () => {
                           <SelectItem value="cancelled">ملغي</SelectItem>
                         </SelectContent>
                       </Select>
+                      {!order.seen && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => markOrderAsSeen(order.id)}
+                        >
+                          تمت المشاهدة
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

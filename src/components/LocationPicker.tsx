@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { MapPin } from "lucide-react";
 
+// Add type declaration for Google Maps
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 interface LocationPickerProps {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
   initialAddress?: string;
@@ -9,8 +16,8 @@ interface LocationPickerProps {
 
 export const LocationPicker = ({ onLocationSelect, initialAddress = "" }: LocationPickerProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [marker, setMarker] = useState<google.maps.Marker | null>(null);
+  const [map, setMap] = useState<any>(null);
+  const [marker, setMarker] = useState<any>(null);
   const [apiKey, setApiKey] = useState(localStorage.getItem("googleMapsApiKey") || "");
   const [needsKey, setNeedsKey] = useState(!localStorage.getItem("googleMapsApiKey"));
   const [scriptLoaded, setScriptLoaded] = useState(false);
@@ -47,13 +54,13 @@ export const LocationPicker = ({ onLocationSelect, initialAddress = "" }: Locati
   useEffect(() => {
     if (!scriptLoaded || !mapRef.current || !window.google) return;
 
-    const mapInstance = new google.maps.Map(mapRef.current, {
+    const mapInstance = new window.google.maps.Map(mapRef.current, {
       center: { lat: 30.0444, lng: 31.2357 }, // Cairo, Egypt
       zoom: 12,
       mapTypeControl: false,
     });
 
-    const markerInstance = new google.maps.Marker({
+    const markerInstance = new window.google.maps.Marker({
       map: mapInstance,
       position: { lat: 30.0444, lng: 31.2357 },
       draggable: true,
@@ -63,8 +70,8 @@ export const LocationPicker = ({ onLocationSelect, initialAddress = "" }: Locati
     markerInstance.addListener("dragend", () => {
       const position = markerInstance.getPosition();
       if (position) {
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ location: position }, (results, status) => {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ location: position }, (results: any, status: any) => {
           if (status === "OK" && results?.[0]) {
             onLocationSelect({
               lat: position.lat(),
@@ -77,11 +84,11 @@ export const LocationPicker = ({ onLocationSelect, initialAddress = "" }: Locati
     });
 
     // Handle map click
-    mapInstance.addListener("click", (e: google.maps.MapMouseEvent) => {
+    mapInstance.addListener("click", (e: any) => {
       if (e.latLng) {
         markerInstance.setPosition(e.latLng);
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ location: e.latLng }, (results, status) => {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ location: e.latLng }, (results: any, status: any) => {
           if (status === "OK" && results?.[0]) {
             onLocationSelect({
               lat: e.latLng!.lat(),
