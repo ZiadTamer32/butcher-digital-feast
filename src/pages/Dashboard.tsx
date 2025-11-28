@@ -3,7 +3,7 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Lock, Mail, Eye, EyeOff, Pencil, Trash2, Plus } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, Pencil, Trash2, Plus, TrendingUp, Package, ShoppingCart, DollarSign } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,10 +11,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Product, products as initialProducts } from "@/data/products";
 
 type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 type OrderFilter = 'all' | 'new' | 'seen' | 'cancelled';
+type TimePeriod = 'monthly' | '3months' | '6months';
 
 interface Order {
   id: string;
@@ -44,6 +46,7 @@ const Dashboard = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderFilter, setOrderFilter] = useState<OrderFilter>('all');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('monthly');
   const [products, setProducts] = useState<Product[]>([]);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -203,6 +206,49 @@ const Dashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
+  const getOrdersByTimePeriod = () => {
+    const now = new Date();
+    const monthsBack = timePeriod === 'monthly' ? 1 : timePeriod === '3months' ? 3 : 6;
+    const cutoffDate = new Date(now.setMonth(now.getMonth() - monthsBack));
+    
+    return orders.filter(order => new Date(order.date) >= cutoffDate);
+  };
+
+  const calculateStats = () => {
+    const periodOrders = getOrdersByTimePeriod();
+    
+    // Calculate total revenue (net profit)
+    const totalRevenue = periodOrders
+      .filter(order => order.status !== 'cancelled')
+      .reduce((sum, order) => sum + order.total, 0);
+    
+    // Calculate best seller
+    const productSales: Record<string, { name: string; revenue: number; quantity: number }> = {};
+    
+    periodOrders
+      .filter(order => order.status !== 'cancelled')
+      .forEach(order => {
+        order.items.forEach(item => {
+          if (!productSales[item.id]) {
+            productSales[item.id] = { name: item.nameAr, revenue: 0, quantity: 0 };
+          }
+          productSales[item.id].revenue += item.price * item.quantity;
+          productSales[item.id].quantity += item.quantity;
+        });
+      });
+    
+    const bestSeller = Object.values(productSales).sort((a, b) => b.revenue - a.revenue)[0] || null;
+    
+    return {
+      totalRevenue,
+      totalOrders: periodOrders.filter(order => order.status !== 'cancelled').length,
+      totalProducts: products.length,
+      bestSeller,
+    };
+  };
+
+  const stats = calculateStats();
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -329,6 +375,83 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="orders">
+            {/* Time Period Filter */}
+            <div className="flex justify-end mb-6">
+              <Select value={timePeriod} onValueChange={(value) => setTimePeriod(value as TimePeriod)}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">شهر واحد</SelectItem>
+                  <SelectItem value="3months">3 أشهر</SelectItem>
+                  <SelectItem value="6months">6 أشهر</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="gradient-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">أفضل مبيعات</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">
+                    {stats.bestSeller ? stats.bestSeller.name : 'لا يوجد'}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats.bestSeller ? `${stats.bestSeller.revenue.toFixed(0)} ج.م` : '0 ج.م'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="gradient-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">صافي الربح</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary">
+                    {stats.totalRevenue.toFixed(0)} ج.م
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    إجمالي الإيرادات
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="gradient-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">إجمالي الطلبات</CardTitle>
+                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">
+                    {stats.totalOrders}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    طلبات مكتملة
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="gradient-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">إجمالي المنتجات</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">
+                    {stats.totalProducts}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    منتجات متاحة
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Filter Buttons */}
             <div className="flex flex-wrap gap-2 mb-6">
               <Button
